@@ -1,24 +1,29 @@
 {
-  "name": "codemash-js-dev-env",
+  "name": "cota",
   "version": "1.0.0",
-  "description": "JS Dev Environment",
+  "description": "Realtime location of cota buses",
   "scripts": {
     "start": "npm-run-all --parallel open test",
     "open": "node tools/srcServer.js",
     "test": "jest --watch"
   },
-  "author": "Cory House",
+  "author": "Cody Carse",
   "license": "MIT",
   "dependencies": {
     "babel-core": "6.21.0",
     "babel-loader": "6.2.10",
     "babel-preset-latest": "6.16.0",
+    "d3": "^4.4.1",
+    "d3-geo": "^1.4.0",
+    "d3-scale": "^1.0.4",
     "eslint": "3.12.2",
     "eslint-loader": "1.6.1",
     "express": "4.14.0",
+    "gtfs-realtime-bindings": "^0.0.4",
     "jest": "18.0.0",
     "npm-run-all": "3.1.2",
     "open": "0.0.5",
+    "turf": "^3.0.14",
     "webpack": "1.14.0",
     "webpack-dev-middleware": "1.9.0",
     "webpack-hot-middleware": "2.13.2"
