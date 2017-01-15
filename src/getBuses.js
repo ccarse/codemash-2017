@@ -16,7 +16,7 @@ function getBuses() {
       if (!error && response.statusCode == 200) {
         var feed = GtfsRealtimeBindings.FeedMessage.decode(body);
         for (entity of feed.entity) {
-          console.log(entity);
+          // console.log(entity);
           if (entity.vehicle) {
             buses.push({
               "id": entity.id,
@@ -35,11 +35,11 @@ function getBuses() {
   });
 }
 
-function writeBuses() {
-  getBuses().then(buses => { 
+exports.returnBuses = () => {
+  return getBuses().then(data => { 
     //console.log(JSON.stringify(buses, null, 4));
-    fs.writeFileSync("./data/buses.json", JSON.stringify(buses));  
+    // fs.writeFileSync("./data/buses.json", JSON.stringify(buses));  
+    return data;
   }).catch(err => console.log(err));
 }
 
-writeBuses();
