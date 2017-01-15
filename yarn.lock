@@ -1180,7 +1180,7 @@ d3-quadtree@1, d3-quadtree@1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/d3-quadtree/-/d3-quadtree-1.0.2.tgz#e7e873af06aaa427eaa4af094cc4cbfb350b9e38"
 
-d3-queue@3.0.3:
+d3-queue@3.0.3, d3-queue@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/d3-queue/-/d3-queue-3.0.3.tgz#10ee4dd0574a1affaabfb931d0ba4f117926edc6"
 

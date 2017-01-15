@@ -1,36 +1,52 @@
 import * as d3 from 'd3';
-import * as scale from 'd3-scale';
+import * as d3geo from 'd3-geo';
+import * as d3queue from 'd3-queue';
 
-d3.json("/data/buses.json", function(error, json) {
-    if(error) { console.log(error.toString()); }
+var buses;
+var i270;
+
+var getBuses = function(callback) {
+    d3.json("/data/buses.json", function(error, json) {
+        if(error) { console.log(error.toString()); }
+
+        buses = json.map(b => { return b.location.point });
+
+        callback(null);
+    }); 
+}
+
+var get270 = function(callback) {
+    d3.json("/data/I270.geojson", function(error, json) {
+        if(error) { console.log(error.toString()); }
+        i270 = json;
+        callback(null);
+    });
+}
+
+var ready = function() {
     
-    // d3.select("body")
-    //   .selectAll("p")
-    //   .data(json)
-    //   .enter()
-    //   .append("p")
-    //   .text(b => { return JSON.stringify(b.location.point.geometry.coordinates[1]); } );
+    buses.push(i270);
 
-    // var svg = d3.select("body")
-    //             .append("svg")
-    //             .attr("width", 1262)
-    //             .attr("height", 800);
-    
-    // var xScale =scale.scaleLinear()
-    //                     .domain([-82.75,-83.25])
-    //                     .range([1, 1000]);
-    // var yScale =scale.scaleLinear()
-    //                     .domain([39.7, 40.25])
-    //                     .range([1, 700]);
+    console.log(JSON.stringify(buses, null, 4));
 
-    // svg.selectAll("circle")
-    //    .data(json)
-    //    .enter()
-    //    .append("circle")
-    //    .attr("cx", function(d) { return xScale(d.location.point.geometry.coordinates[0]) })
-    //    .attr("cy", function(d) { return yScale(d.location.point.geometry.coordinates[1])  })
-    //    .attr("r", 10)
-    //    .attr("fill", "red")
+    var svg = d3.select("body")
+                .append("svg")
+                .attr("width", 1262)
+                .attr("height", 800);
 
-    
-}); 
+    var projection = d3geo.geoMercator()
+                          .fitExtent([[0,0],[1262, 800]],i270);
+
+    var path = d3geo.geoPath(projection); 
+
+    svg.selectAll("path")
+       .data(buses)
+       .enter()
+       .append("path")
+       .attr("d", path);
+}
+
+d3queue.queue()
+        .defer(getBuses)
+        .defer(get270)
+        .awaitAll(ready);
