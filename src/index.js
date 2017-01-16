@@ -1,18 +1,21 @@
 import * as d3 from 'd3';
-import * as d3geo from 'd3-geo';
-import * as d3queue from 'd3-queue';
+import * as turf from 'turf';
 
 var buses;
 var i270;
 var svg;
 var projection; 
 var path; 
+var HEIGHT = 800;
+var WIDTH = 1262;
+var DURATION = 10000; 
 
 var getBuses = function(callback) {
     d3.json("/buses", function(error, json) {
         if(error) { console.log(error.toString()); }
-
-        buses = json.map(b => { var point = b.location.point; point.id = b.id; return point;  });
+        // console.log(json);
+        // buses = json.map(b => { var point = b.location.point; point.id = b.id; return point;  });
+        buses = Object.values(json).map(b => turf.lineString(b));
 
         callback(null);
     }); 
@@ -29,38 +32,46 @@ var get270 = function(callback) {
 var id = function(bus) { return bus.id; }
 
 var ready = function() {
+
+    if( !projection ) { projection = d3.geoMercator().fitExtent([[10,10],[WIDTH, HEIGHT]],i270); }
     
-    // console.log(JSON.stringify(buses, null, 4));
-    if( !projection ) { projection = d3geo.geoMercator().fitExtent([[0,0],[1262, 800]],i270); }
+    if( !path ) { path = d3.geoPath(projection); }
     
-    if( !path ) { path = d3geo.geoPath(projection); }
-    
-    var paths = svg.selectAll("path")
+    svg.selectAll("path.i270")
+       .data([i270])
+       .enter()
+       .append("path")
+       .classed("i270", true)
+       .attr("d", path);
+
+    var paths = svg.selectAll("path.bus")
                    .data(buses, id);
 
     paths.transition()
-         .duration(4000)
-         .attr("d", path)
-
+         .ease(d3.easeLinear)
+         .duration(DURATION)
+         .attr("d", path);
+         
     paths.enter()
          .append("path")
+         .classed("bus", true)
          .attr("d", path)
          .attr("opacity", 0)
          .transition()
-         .duration(4000)
+         .duration(DURATION)
          .attr("opacity", 1);
 
     paths.exit()
          .transition()
-         .duration(4000)
+         .duration(DURATION)
          .attr("opacity", 0)
          .remove();
     
-    setTimeout(refresh, 5000);
+    setTimeout(refresh, DURATION);
 }
 
 var refresh = () => {
-    d3queue.queue()
+    d3.queue()
            .defer(getBuses)
            .defer(get270)
            .awaitAll(ready);
@@ -69,6 +80,6 @@ var refresh = () => {
  
 svg = d3.select("body")
         .append("svg")
-        .attr("width", 1262)
-        .attr("height", 800);
+        .attr("width", WIDTH)
+        .attr("height", HEIGHT);
 refresh();
