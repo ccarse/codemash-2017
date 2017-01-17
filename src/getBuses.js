@@ -4,6 +4,8 @@ var turf = require('turf');
 var fs = require('fs');
 var d3 = require('d3');
 
+var NUM_SEGMENTS = 30;
+
 function getBuses() {
   // console.log("Inside getBuses()");
   var buses = [];
@@ -28,7 +30,7 @@ function getBuses() {
         //console.log(buses);
         resolve(buses);
       } else {
-        reject(error + response.statusCode);
+        reject(error);
       }
     });
   });
@@ -49,7 +51,7 @@ function updateBuses(data) {
       } else { // Append new point to existing bus
         var pointArray = fileData[bus];
         pointArray.push( data.find( j => j.id == bus ).location );
-        if ( pointArray.length > 60 ) { pointArray.shift(); }
+        while ( pointArray.length > NUM_SEGMENTS ) { pointArray.shift(); }
       }
     }
     var newIds = updateIds.filter( y => fileIds.indexOf(y) < 0 );

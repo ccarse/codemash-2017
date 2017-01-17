@@ -5,7 +5,7 @@ var config = require('../webpack.config.dev');
 var open = require('open');
 var getBuses = require('../src/getBuses.js'); 
 
-var port = 3000;
+var port = 3005;
 var app = express();
 var compiler = webpack(config);
 

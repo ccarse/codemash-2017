@@ -6,16 +6,23 @@ var i270;
 var svg;
 var projection; 
 var path; 
+var path2;
+
 var HEIGHT = 800;
 var WIDTH = 1262;
-var DURATION = 10000; 
+var FADE_DURATION = 2000; 
+var FETCH_INTERVAL = 15000;
 
 var getBuses = function(callback) {
     d3.json("/buses", function(error, json) {
         if(error) { console.log(error.toString()); }
         // console.log(json);
         // buses = json.map(b => { var point = b.location.point; point.id = b.id; return point;  });
-        buses = Object.values(json).map(b => turf.lineString(b));
+        buses = [];
+        for (var aKey of Object.keys(json)) {
+            var b = json[aKey];
+            buses.push({"id": aKey, "location":turf.point(b.slice(-1)[0])});
+        }
 
         callback(null);
     }); 
@@ -36,6 +43,8 @@ var ready = function() {
     if( !projection ) { projection = d3.geoMercator().fitExtent([[10,10],[WIDTH, HEIGHT]],i270); }
     
     if( !path ) { path = d3.geoPath(projection); }
+
+    if( !path2 ) { path2 = someData => d3.geoPath(projection)(someData.location); }
     
     svg.selectAll("path.i270")
        .data([i270])
@@ -49,25 +58,25 @@ var ready = function() {
 
     paths.transition()
          .ease(d3.easeLinear)
-         .duration(DURATION)
-         .attr("d", path);
+         .duration(FETCH_INTERVAL)
+         .attr("d", path2);
          
     paths.enter()
          .append("path")
          .classed("bus", true)
-         .attr("d", path)
+         .attr("d", path2)
          .attr("opacity", 0)
          .transition()
-         .duration(DURATION)
+         .duration(FADE_DURATION)
          .attr("opacity", 1);
 
     paths.exit()
          .transition()
-         .duration(DURATION)
+         .duration(FADE_DURATION)
          .attr("opacity", 0)
          .remove();
     
-    setTimeout(refresh, DURATION);
+    setTimeout(refresh, FETCH_INTERVAL);
 }
 
 var refresh = () => {
