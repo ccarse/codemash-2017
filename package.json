@@ -48,7 +48,8 @@
     },
     "rules": {
       "no-console": "off",
-      "no-debugger": "warn"
+      "no-debugger": "warn",
+      "no-unused-vars": "warn"
     }
   }
 }

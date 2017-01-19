@@ -4,7 +4,7 @@ var turf = require('turf');
 var fs = require('fs');
 var d3 = require('d3');
 
-var NUM_SEGMENTS = 3;
+var NUM_SEGMENTS = 2;
 
 function getBuses() {
   // console.log("Inside getBuses()");

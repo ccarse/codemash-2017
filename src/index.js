@@ -18,8 +18,16 @@ var FADE_DURATION = 2000;
 var FETCH_INTERVAL = 10000;
 
 var getShapes = function(callback) {
+  var row = function(d) {
+    return {
+        shape_id: +d.shape_id, 
+        shape_pt_lon: +d.shape_pt_lon,
+        shape_pt_lat: +d.shape_pt_lat,
+        shape_pt_sequence: +d.shape_pt_sequence // convert "Length" column to number
+    };
+  }
 
-  d3.csv('/data/shapes.txt', (error, csv) => { 
+  d3.csv('/data/shapes.txt', row, (error, csv) => { 
     for( var line of csv ) {
         if ( shapes[line.shape_id] == undefined ) {
             shapes[line.shape_id] = [];
@@ -39,7 +47,9 @@ var getTrips = function(callback) { // returns an object with trip_id keys with 
 
 var getShapeForTrip = function(trip_id) {
     var shape_id = trips[trip_id];
-    var ret = turf.lineString(shapes[shape_id].map(s => [s.shape_pt_lon, s.shape_pt_lat])); 
+    //var ret = shapes[shape_id].sort((i1, i2) => d3.ascending(i1.shape_pt_sequence, i2.shape_pt_sequence)).map(s => [s.shape_pt_lon, s.shape_pt_lat]); 
+    var ret = shapes[shape_id].map(s => [s.shape_pt_lon, s.shape_pt_lat]); 
+    // console.log(ret);
     return ret;
 }
 
@@ -66,24 +76,27 @@ var get270 = function(callback) {
     });
 }
 
-var id = function(bus) { return bus.id; }
-
-var ready = function() {
-
+var once = function() {
     if( !projection ) { projection = d3.geoMercator().fitExtent([[10,10],[WIDTH, HEIGHT]],i270); }
     
     if( !path ) { path = d3.geoPath(projection); }
 
-    if( !path2 ) { path2 = someData => { return d3.geoPath(projection)( getShapeForTrip(someData.trip_id) ); } }
+    if( !path2 ) { path2 = someData => { return d3.geoPath(projection)( turf.lineString(getShapeForTrip(someData.trip_id)) ); } }
 
     if( !path3 ) { path3 = someData => { return d3.geoPath(projection).pointRadius(3)(someData.location); } }
-    
+
     svg.selectAll("path.i270")
        .data([i270])
        .enter()
        .append("path")
        .classed("i270", true)
        .attr("d", path);
+
+    ready();
+}
+
+var ready = function() {
+    var id = function(bus) { return bus.id; }
 
     var paths = svg.selectAll("path.shape")
                    .data(buses, id);
@@ -100,11 +113,10 @@ var ready = function() {
 
     var busPaths = svg.selectAll("path.bus")
                       .data(buses, id);
-    // busPaths.transition()
-    //         .ease(d3.easeLinear)
-    //         .duration(FETCH_INTERVAL - 7000)
-    //         .attr("d", path3);
-    busPaths.attr("d", path3);
+    busPaths.transition()
+            .ease(d3.easeLinear)
+            .duration(FETCH_INTERVAL - 2000)
+            .attr("d", path3);
          
     busPaths.enter()
             .append("path")
@@ -120,23 +132,24 @@ var ready = function() {
             .duration(FADE_DURATION)
             .attr("opacity", 0)
             .remove();
-    
-    setTimeout(refresh, FETCH_INTERVAL);
 }
 
 var refresh = () => {
     d3.queue()
-      .defer(getShapes)
-      .defer(getTrips)
       .defer(getBuses)
-      .defer(get270)
       .awaitAll(ready);
 }
 
- 
 svg = d3.select("body")
         .append("svg")
         .attr("width", WIDTH)
         .attr("height", HEIGHT);
 
-refresh();
+d3.queue()
+  .defer(getShapes)
+  .defer(getTrips)
+  .defer(getBuses)
+  .defer(get270)
+  .awaitAll(once);
+
+d3.interval(refresh, FETCH_INTERVAL);
