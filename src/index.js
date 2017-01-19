@@ -3,15 +3,45 @@ import * as turf from 'turf';
 
 var buses;
 var i270;
+var shapes = {};
+var trips = {};
+
 var svg;
 var projection; 
 var path; 
 var path2;
+var path3;
 
 var HEIGHT = 800;
 var WIDTH = 1262;
 var FADE_DURATION = 2000; 
-var FETCH_INTERVAL = 15000;
+var FETCH_INTERVAL = 10000;
+
+var getShapes = function(callback) {
+
+  d3.csv('/data/shapes.txt', (error, csv) => { 
+    for( var line of csv ) {
+        if ( shapes[line.shape_id] == undefined ) {
+            shapes[line.shape_id] = [];
+        }
+        shapes[line.shape_id].push(line);
+    }
+    callback(null);
+  });
+}
+
+var getTrips = function(callback) { // returns an object with trip_id keys with shape_id values 
+    d3.csv('/data/trips.txt', (error, csv) => { 
+        for( var t of csv) { trips[t.trip_id] = t.shape_id } 
+        callback(null);
+    });
+}
+
+var getShapeForTrip = function(trip_id) {
+    var shape_id = trips[trip_id];
+    var ret = turf.lineString(shapes[shape_id].map(s => [s.shape_pt_lon, s.shape_pt_lat])); 
+    return ret;
+}
 
 var getBuses = function(callback) {
     d3.json("/buses", function(error, json) {
@@ -21,7 +51,7 @@ var getBuses = function(callback) {
         buses = [];
         for (var aKey of Object.keys(json)) {
             var b = json[aKey];
-            buses.push({"id": aKey, "location":turf.point(b.slice(-1)[0])});
+            buses.push({"id": aKey, "location":turf.point(b.location.slice(-1)[0]), "trip_id": b.trip_id});
         }
 
         callback(null);
@@ -44,7 +74,9 @@ var ready = function() {
     
     if( !path ) { path = d3.geoPath(projection); }
 
-    if( !path2 ) { path2 = someData => d3.geoPath(projection)(someData.location); }
+    if( !path2 ) { path2 = someData => { return d3.geoPath(projection)( getShapeForTrip(someData.trip_id) ); } }
+
+    if( !path3 ) { path3 = someData => { return d3.geoPath(projection).pointRadius(3)(someData.location); } }
     
     svg.selectAll("path.i270")
        .data([i270])
@@ -53,37 +85,52 @@ var ready = function() {
        .classed("i270", true)
        .attr("d", path);
 
-    var paths = svg.selectAll("path.bus")
+    var paths = svg.selectAll("path.shape")
                    .data(buses, id);
-
-    paths.transition()
-         .ease(d3.easeLinear)
-         .duration(FETCH_INTERVAL)
-         .attr("d", path2);
-         
     paths.enter()
          .append("path")
-         .classed("bus", true)
+         .classed("shape", true)
          .attr("d", path2)
-         .attr("opacity", 0)
-         .transition()
-         .duration(FADE_DURATION)
-         .attr("opacity", 1);
+         .style("stroke",function() {
+            return "hsl(" + Math.random() * 360 + ",100%,50%)";
+         });
 
     paths.exit()
-         .transition()
-         .duration(FADE_DURATION)
-         .attr("opacity", 0)
          .remove();
+
+    var busPaths = svg.selectAll("path.bus")
+                      .data(buses, id);
+    // busPaths.transition()
+    //         .ease(d3.easeLinear)
+    //         .duration(FETCH_INTERVAL - 7000)
+    //         .attr("d", path3);
+    busPaths.attr("d", path3);
+         
+    busPaths.enter()
+            .append("path")
+            .classed("bus", true)
+            .attr("d", path3)
+            .attr("opacity", 0)
+            .transition()
+            .duration(FADE_DURATION)
+            .attr("opacity", 1);
+
+    busPaths.exit()
+            .transition()
+            .duration(FADE_DURATION)
+            .attr("opacity", 0)
+            .remove();
     
     setTimeout(refresh, FETCH_INTERVAL);
 }
 
 var refresh = () => {
     d3.queue()
-           .defer(getBuses)
-           .defer(get270)
-           .awaitAll(ready);
+      .defer(getShapes)
+      .defer(getTrips)
+      .defer(getBuses)
+      .defer(get270)
+      .awaitAll(ready);
 }
 
  
@@ -91,4 +138,5 @@ svg = d3.select("body")
         .append("svg")
         .attr("width", WIDTH)
         .attr("height", HEIGHT);
+
 refresh();

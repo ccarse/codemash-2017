@@ -4,7 +4,7 @@ var turf = require('turf');
 var fs = require('fs');
 var d3 = require('d3');
 
-var NUM_SEGMENTS = 30;
+var NUM_SEGMENTS = 3;
 
 function getBuses() {
   // console.log("Inside getBuses()");
@@ -23,7 +23,8 @@ function getBuses() {
           if (entity.vehicle) {
             buses.push({
               "id": entity.id,
-              "location": [entity.vehicle.position.longitude, entity.vehicle.position.latitude]
+              "location": [entity.vehicle.position.longitude, entity.vehicle.position.latitude],
+              "trip_id": entity.vehicle.trip.trip_id
             });
           }
         }
@@ -49,7 +50,7 @@ function updateBuses(data) {
       if( updateIds.indexOf(bus) < 0) { // Remove bus from file data
         delete fileData[bus];
       } else { // Append new point to existing bus
-        var pointArray = fileData[bus];
+        var pointArray = fileData[bus].location;
         pointArray.push( data.find( j => j.id == bus ).location );
         while ( pointArray.length > NUM_SEGMENTS ) { pointArray.shift(); }
       }
@@ -57,7 +58,9 @@ function updateBuses(data) {
     var newIds = updateIds.filter( y => fileIds.indexOf(y) < 0 );
     for (newBusId of newIds) { // Add new bus to file
       newBus = data.find( z => z.id == newBusId );
-      fileData[newBus.id] = [newBus.location];
+      fileData[newBus.id] = {};
+      fileData[newBus.id].location = [newBus.location];
+      fileData[newBus.id].trip_id = newBus.trip_id;
     }
     resolve(fileData);
   });
