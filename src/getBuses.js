@@ -41,8 +41,13 @@ function updateBuses(data) {
   // console.log("Inside updateBuses()");
 
   return new Promise((resolve, reject) => {  
-
-    var fileData = require('./data/buses.json');
+    var fileData;
+    try {
+      fileData = require('./data/buses.json');
+    } catch(e) {
+      fileData = {};
+    }
+    
     var fileIds = Object.keys(fileData);
     var updateIds = data.map(x => x.id);
     
@@ -69,7 +74,7 @@ function updateBuses(data) {
 exports.returnBuses = () => {
   return getBuses().then(data => { 
     return updateBuses(data).then(buses => {
-      //console.log(JSON.stringify(buses, null, 4));  
+      console.log(JSON.stringify(buses, null, 4));  
       fs.writeFileSync("src/data/buses.json", JSON.stringify(buses));
       return buses
     }).catch(err => console.log(err));

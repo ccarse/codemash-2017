@@ -17,6 +17,9 @@ app.get('/', function(req, res) {
 });
 
 app.get('/buses', function(req, res) {
+  res.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  res.header('Expires', '-1');
+  res.header('Pragma', 'no-cache');
   getBuses.returnBuses().then( function(results) { res.json(results); })
 });
 
